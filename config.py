@@ -9,10 +9,11 @@ def configure_styles():
     style.configure("Treeview.Heading",
                     font=('Calibri', 13, 'bold'))  # Modify heading font
     style.map("Treeview",
-              background=[('selected', 'white')],
-              foreground=[('selected', 'black')])
+              background=[('selected', '#CCE4FF')],  # Light blue background
+              foreground=[('selected', 'black')])    # Keep text black for readability
     style.layout("Treeview.Item",
                  [('Treeitem.padding', {'sticky': 'nswe', 'children':
                      [('Treeitem.indicator', {'side': 'left', 'sticky': ''}),
                       ('Treeitem.image', {'side': 'left', 'sticky': ''}),
                       ('Treeitem.text', {'side': 'left', 'sticky': ''})]})])
+    style.configure("Treeview", rowheight=22)  # Increase row height for better visibility

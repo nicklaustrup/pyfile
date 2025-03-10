@@ -7,15 +7,25 @@ from config import configure_styles
 class FileTreeView:
     def __init__(self, parent, open_file_callback):
         self.tree_frame = ttk.Frame(parent)
-        self.tree_frame.grid(row=0, column=0, sticky="nsew")
+        self.tree_frame.pack(fill="both", expand=True)
 
-        self.tree = ttk.Treeview(self.tree_frame, style="Treeview")
-        self.tree.grid(row=0, column=0, sticky="nsew")
+        # Create a container frame for the treeview and vertical scrollbar
+        self.tree_container = ttk.Frame(self.tree_frame)
+        self.tree_container.pack(side="top", fill="both", expand=True)
+
+        # Configure the treeview with show="tree" to only show items, not columns
+        # Set the displaycolumns to an empty list to ensure horizontal scrolling works
+        self.tree = ttk.Treeview(self.tree_container, style="Treeview", show="tree")
+        self.tree.pack(side="left", fill="both", expand=True)
 
         self.open_file_callback = open_file_callback
         self.tree.bind("<Double-1>", self.on_double_click)
         self.tree.bind("<<TreeviewOpen>>", self.on_treeview_open)
         self.tree.bind("<<TreeviewClose>>", self.on_treeview_close)
+        # Add binding for single click to highlight selection
+        self.tree.bind("<ButtonRelease-1>", self.on_item_select)
+        # Add binding for window resize to update column width
+        self.tree_frame.bind("<Configure>", self.on_frame_configure)
 
         self.folder_icon = self.resize_icon("./assets/folder.png", (16, 16))
         self.file_icon = self.resize_icon("./assets/file.png", (16, 16))
@@ -24,25 +34,40 @@ class FileTreeView:
         # Create a style for the Treeview
         configure_styles()
 
+        # Add Scrollbars
+        self.create_scrollbar()
+        
+        # Populate the tree after everything is set up
         self.populate_drives()
 
-        # Add Scrollbar
-        self.create_scrollbar()
-
-        self.tree_frame.grid_rowconfigure(0, weight=1)
-        self.tree_frame.grid_columnconfigure(0, weight=1)
-
+    def on_frame_configure(self, event):
+        """Handle frame resize events to adjust column width."""
+        # Set the column width to a large value to ensure horizontal scrolling works
+        # This ensures long filenames can be scrolled to view
+        self.tree.column("#0", width=max(200, event.width - 20), stretch=False)
+        
     def create_scrollbar(self):
-        """Creates the scrollbar."""
-        v_scrollbar = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
-        v_scrollbar.grid(row=0, column=1, sticky="ns")
-
+        """Creates the scrollbars."""
+        # Vertical scrollbar - placed in the tree_container frame
+        v_scrollbar = ttk.Scrollbar(self.tree_container, orient="vertical", command=self.tree.yview)
+        v_scrollbar.pack(side="right", fill="y")
+        
+        # Horizontal scrollbar - placed directly in the tree_frame
         h_scrollbar = ttk.Scrollbar(self.tree_frame, orient="horizontal", command=self.tree.xview)
-        h_scrollbar.grid(row=1, column=0, sticky="ew")
+        h_scrollbar.pack(side="bottom", fill="x")
+        
+        # Configure Treeview to work with both scrollbars
+        self.tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        # Make sure the horizontal scrollbar is enabled by setting the column width
+        # Set a large minwidth to ensure horizontal scrolling is enabled
+        self.tree.column("#0", width=200, minwidth=300, stretch=False)
 
-        # Configure Treeview to work with Scrollbar
-        self.tree.configure(yscrollcommand=v_scrollbar.set)
-        self.tree.configure(xscrollcommand=h_scrollbar.set)
+    def on_item_select(self, event):
+        """Handles item selection to highlight the selected item."""
+        # The selection is automatically handled by ttk.Treeview
+        # We can add custom styling if needed
+        pass
 
     def populate_drives(self):
         """Populates the tree view with the available drives."""
